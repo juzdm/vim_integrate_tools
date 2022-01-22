@@ -1,0 +1,1 @@
+../third_part_plus/vim-plug/plug.vim
