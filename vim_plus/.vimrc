@@ -188,3 +188,26 @@ let g:Lf_ShowDevIcons = 1
 let g:Lf_DevIconsFont = "DroidSansMono Nerd Font Mono"
 " If needs
 set ambiwidth=double
+
+" this is for support android, this is from  build/envsetup.sh
+command! -complete=shellcmd -nargs=+ Shell call s:RunShellCommand(<q-args>)
+function! s:RunShellCommand(cmdline) abort
+    :cexpr system(a:cmdline)
+    :copen
+endfunction
+
+command! -complete=shellcmd -nargs=+ Ggrep call s:GgrepCommand(<q-args>)
+function! s:GgrepCommand(cmdline) abort
+    let ggrepcmdstr = 'find . -name .repo -prune -o -name .git -prune -o -name out -prune -o -type f -name "*\.gradle" -exec grep --color -n ' .  a:cmdline . ' {} +'
+    :cexpr system(ggrepcmdstr)
+    :copen
+endfunction
+
+command! -complete=shellcmd -nargs=+ Jgrep call s:JgrepCommand(<q-args>)
+function! s:JgrepCommand(cmdline) abort
+    let jgrepcmdstr = ' find . -name .repo -prune -o -name .git -prune -o -name out -prune -o -type f -name "*\.java" -exec grep --color -n ' .  a:cmdline . ' {} +'
+    :cexpr system(jgrepcmdstr)
+    :copen
+    call clearmatches()
+    silent call matchadd('Search', a:cmdline) " Hi group / pattern
+endfunction
