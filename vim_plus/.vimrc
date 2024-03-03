@@ -61,8 +61,12 @@ Plug 'tpope/vim-fugitive'
 Plug 'skywind3000/vim-terminal-help'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'jiangmiao/auto-pairs'
-Plug '~/code/vim/wineasy'
-
+"Plug '~/code/vim/wineasy'
+Plug 'weilbith/nerdtree_choosewin-plugin'
+Plug 'kevinoid/vim-jsonc'
+Plug 'szw/vim-maximizer'
+"p Plug 'fholgado/minibufexpl.vim'
+" Plug 'roblillack/vim-bufferlist'
 
 call plug#end()
 " You can revert the settings after the call like so:
@@ -78,10 +82,11 @@ let mapleader="\<Space>"
 nmap <F3> :cp<cr>
 nmap <F4> :cn<cr>
 nmap <F2> :cw 10<cr> 
-map <C-A> ggVGY " 映射全选+复制 ctrl+a
-map! <C-A> <Esc>ggVGY
-map <F12> gg=G
-vmap <C-c> "+y " 选中状态下 Ctrl+c 复制
+"" map <C-A> ggVGY " 映射全选+复制 ctrl+a
+"map <C-A> gg"+yG " 映射全选+复制 ctrl+a
+"map! <C-A> <Esc>ggVGY
+"" map <F12> gg=G
+"vmap <C-c> "+y " 选中状态下 Ctrl+c 复制
 set autoread " 设置当文件被改动时自动载入
 set nobackup " 设置不需要备份
 set syntax=on
@@ -118,7 +123,6 @@ set number               " 开启行号显示
 set cursorline           " 高亮显示当前行
 set whichwrap+=<,>,h,l   " 设置光标键跨行
 set virtualedit=block,onemore   " 允许光标出现在最后一个字符的后面
-set mouse=v              " 设置使用鼠标模式
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " 代码缩进和排版
@@ -195,6 +199,49 @@ let g:NERDTreeHighlightFoldersFullName = 1
 let g:NERDTreeDirArrowExpandable='▷'
 let g:NERDTreeDirArrowCollapsible='▼'
 
+" Start NERDTree and leave the cursor in it.
+autocmd VimEnter * NERDTree
+" Start NERDTree and put the cursor back in the other window.
+autocmd VimEnter * NERDTree | wincmd p
+" Start NERDTree when Vim is started without file arguments.
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 0 && !exists('s:std_in') | NERDTree | endif
+" Start NERDTree. If a file is specified, move the cursor to its window.
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * NERDTree | if argc() > 0 || exists("s:std_in") | wincmd p | endif
+" Start NERDTree, unless a file or session is specified, eg. vim -S session_file.vim.
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 0 && !exists('s:std_in') && v:this_session == '' | NERDTree | endif
+" Start NERDTree when Vim starts with a directory argument.
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in') |
+    \ execute 'NERDTree' argv()[0] | wincmd p | enew | execute 'cd '.argv()[0] | endif
+" Exit Vim if NERDTree is the only window remaining in the only tab.
+autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
+" Close the tab if NERDTree is the only window remaining in it.
+autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
+" If another buffer tries to replace NERDTree, put it in the other window, and bring back NERDTree.
+autocmd BufEnter * if winnr() == winnr('h') && bufname('#') =~ 'NERD_tree_\d\+' && bufname('%') !~ 'NERD_tree_\d\+' && winnr('$') > 1 |
+    \ let buf=bufnr() | buffer# | execute "normal! \<C-W>w" | execute 'buffer'.buf | endif
+
+ map <leader>r :NERDTreeFind<cr>
+" returns true iff is NERDTree open/active
+function! s:isNTOpen()        
+  return exists("t:NERDTreeBufName") && (bufwinnr(t:NERDTreeBufName) != -1)
+endfunction
+
+" calls NERDTreeFind iff NERDTree is active, current window contains a modifiable file, and we're not in vimdiff
+function! s:syncTree()
+  if &modifiable && s:isNTOpen() && strlen(expand('%')) > 0 && !&diff
+    NERDTreeFind
+    wincmd p
+  endif
+endfunction
+
+autocmd BufEnter * call s:syncTree()
+
+
+
 " nerdtree-git-plugin
 let g:NERDTreeGitStatusIndicatorMapCustom = {
     \ "Modified"  : "✹",
@@ -209,7 +256,17 @@ let g:NERDTreeGitStatusIndicatorMapCustom = {
     \ "Unknown"   : "?"
     \ }
 
+set mouse=a
 
+function! ToggleMouse()
+    " check if mouse is enabled
+    if &mouse == 'a'
+        set mouse=
+    else
+        set mouse=a
+    endif
+endfunc
+map <leader>ms :call ToggleMouse()<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " for Android
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -264,7 +321,7 @@ endfunction
 
 
 ""++++++++this is for atom one theme+++++
-let g:airline_theme='one'
+let g:airline_theme='onedark'
 "Credit joshdick
 "Use 24-bit (true-color) mode in Vim/Neovim when outside tmux.
 "If you're using tmux version 2.2 or later, you can remove the outermost $TMUX check and use tmux's 24-bit color support
@@ -283,12 +340,23 @@ if (empty($TMUX))
 endif
 
 set background=dark " for the dark version
-" set background=light " for the light version
+"set background=light " for the light version
 colorscheme one
+"colorscheme solarized
 let g:one_allow_italics = 1 "I love italic for comments
+let g:solarized_termcolors=256
 
 ""++++++++this is for airline ++++
 let g:airline#extensions#tabline#enabled = 1
+function! WindowNumber(...)
+    let builder = a:1
+    let context = a:2
+    call builder.add_section('airline_b', '%{tabpagewinnr(tabpagenr())}')
+    return 0
+endfunction
+
+call airline#add_statusline_func('WindowNumber')
+call airline#add_inactive_statusline_func('WindowNumber')
 
 ""++++++++this is for ListToggle++++
 let g:lt_location_list_toggle_map = '<leader>l'
@@ -308,7 +376,7 @@ let g:Lf_UseVersionControlTool=1 "default value, can ignore
 let g:Lf_DefaultExternalTool='rg'
 let g:Lf_PreviewInPopup = 1
 let g:Lf_WindowHeight = 0.30
-let g:Lf_CacheDirectory = '/home/sxl4287/.vim/cache'
+"let g:Lf_CacheDirectory = '~/.vim/cache'
 let g:Lf_StlColorscheme = 'powerline'
 let g:Lf_PreviewResult = {
         \ 'File': 1,
@@ -330,44 +398,44 @@ let g:Lf_PreviewResult = {
 
 let g:Lf_ShortcutF = '<c-p>'
 let g:Lf_ShortcutB = '<c-l>'
-noremap <leader>f :LeaderfSelf<cr>
-noremap <leader>fm :LeaderfMru<cr>
-noremap <leader>ff :LeaderfFunction<cr>
-noremap <leader>ffa :LeaderfFunctionAll<cr>
-noremap <leader>fb :LeaderfBuffer<cr>
-noremap <leader>ft :LeaderfBufTag<cr>
-noremap <leader>fta :LeaderfBufTagAll<cr>
-noremap <leader>fl :LeaderfLine<cr>
-noremap <leader>fw :LeaderfWindow<cr>
-noremap <leader>frr :LeaderfRgRecall<cr>
+noremap <leader>lf :LeaderfSelf<cr>
+noremap <leader>lfm :LeaderfMru<cr>
+noremap <leader>lff :LeaderfFunction<cr>
+noremap <leader>lffa :LeaderfFunctionAll<cr>
+noremap <leader>lfb :LeaderfBuffer<cr>
+noremap <leader>lft :LeaderfBufTag<cr>
+noremap <leader>lfta :LeaderfBufTagAll<cr>
+noremap <leader>lfl :LeaderfLine<cr>
+noremap <leader>lfw :LeaderfWindow<cr>
+noremap <leader>lfrr :LeaderfRgRecall<cr>
 
-nmap <unique> <leader>fr <Plug>LeaderfRgPrompt
-nmap <unique> <leader>fra <Plug>LeaderfRgCwordLiteralNoBoundary
-nmap <unique> <leader>frb <Plug>LeaderfRgCwordLiteralBoundary
-nmap <unique> <leader>frc <Plug>LeaderfRgCwordRegexNoBoundary
-nmap <unique> <leader>frd <Plug>LeaderfRgCwordRegexBoundary
+nmap <unique> <leader>lfr <Plug>LeaderfRgPrompt
+nmap <unique> <leader>lfra <Plug>LeaderfRgCwordLiteralNoBoundary
+nmap <unique> <leader>lfrb <Plug>LeaderfRgCwordLiteralBoundary
+nmap <unique> <leader>lfrc <Plug>LeaderfRgCwordRegexNoBoundary
+nmap <unique> <leader>lfrd <Plug>LeaderfRgCwordRegexBoundary
 
-vmap <unique> <leader>fra <Plug>LeaderfRgVisualLiteralNoBoundary
-vmap <unique> <leader>frb <Plug>LeaderfRgVisualLiteralBoundary
-vmap <unique> <leader>frc <Plug>LeaderfRgVisualRegexNoBoundary
-vmap <unique> <leader>frd <Plug>LeaderfRgVisualRegexBoundary
+vmap <unique> <leader>lfra <Plug>LeaderfRgVisualLiteralNoBoundary
+vmap <unique> <leader>lfrb <Plug>LeaderfRgVisualLiteralBoundary
+vmap <unique> <leader>lfrc <Plug>LeaderfRgVisualRegexNoBoundary
+vmap <unique> <leader>lfrd <Plug>LeaderfRgVisualRegexBoundary
 
-nmap <unique> <leader>fgd <Plug>LeaderfGtagsDefinition
-nmap <unique> <leader>fgr <Plug>LeaderfGtagsReference
-nmap <unique> <leader>fgs <Plug>LeaderfGtagsSymbol
-nmap <unique> <leader>fgg <Plug>LeaderfGtagsGrep
+nmap <unique> <leader>lfgd <Plug>LeaderfGtagsDefinition
+nmap <unique> <leader>lfgr <Plug>LeaderfGtagsReference
+nmap <unique> <leader>lfgs <Plug>LeaderfGtagsSymbol
+nmap <unique> <leader>lfgg <Plug>LeaderfGtagsGrep
 
-vmap <unique> <leader>fgd <Plug>LeaderfGtagsDefinition
-vmap <unique> <leader>fgr <Plug>LeaderfGtagsReference
-vmap <unique> <leader>fgs <Plug>LeaderfGtagsSymbol
-vmap <unique> <leader>fgg <Plug>LeaderfGtagsGrep
+vmap <unique> <leader>lfgd <Plug>LeaderfGtagsDefinition
+vmap <unique> <leader>lfgr <Plug>LeaderfGtagsReference
+vmap <unique> <leader>lfgs <Plug>LeaderfGtagsSymbol
+vmap <unique> <leader>lfgg <Plug>LeaderfGtagsGrep
 
-noremap <leader>fgo :<C-U><C-R>=printf("Leaderf! gtags --recall %s", "")<CR><CR>
-noremap <leader>fgn :<C-U><C-R>=printf("Leaderf gtags --next %s", "")<CR><CR>
-noremap <leader>fgp :<C-U><C-R>=printf("Leaderf gtags --previous %s", "")<CR><CR>
+noremap <leader>lfgo :<C-U><C-R>=printf("Leaderf! gtags --recall %s", "")<CR><CR>
+noremap <leader>lfgn :<C-U><C-R>=printf("Leaderf gtags --next %s", "")<CR><CR>
+noremap <leader>lfgp :<C-U><C-R>=printf("Leaderf gtags --previous %s", "")<CR><CR>
 
 noremap <C-B> :<C-U><C-R>=printf("Leaderf! rg --current-buffer -e %s ", expand("<cword>"))<CR>
-noremap <leader>ff :<C-U><C-R>=printf("Leaderf! rg -e %s ", expand("<cword>"))<CR>
+noremap <leader>lff :<C-U><C-R>=printf("Leaderf! rg -e %s ", expand("<cword>"))<CR>
 " search visually selected text literally
 noremap gf :<C-U><C-R>=printf("Leaderf! rg -F -e %s ", leaderf#Rg#visual())<CR>
 noremap go :<C-U>Leaderf! rg --recall<CR>
@@ -427,11 +495,36 @@ let g:fzf_action = {
   \ 'ctrl-i': 'split',
   \ 'ctrl-v': 'vsplit' }
 
+let g:fzf_buffers_jump = 1
+
+command! -bang ProjectFiles call fzf#vim#files('.', <bang>0)
+
+function! GitFZF()
+  let gitPath = trim(system('cd '.shellescape(expand('%:p:h')).' && git rev-parse --show-toplevel'))
+  if !isdirectory(gitPath)
+    let gitPath = expand('%:p:h')
+  endif
+  exe 'FZF ' . gitPath
+endfunction
+
+command! GitFZF call GitFZF()
+nnoremap <leader>fg :GitFZF<CR>
+
+function! REPOFZF()
+  let path = trim(finddir('.repo', ';'))
+  if !isdirectory(path)
+    let path = expand('%:p:h')
+  endif
+  let path = fnamemodify(path, ':h')
+  exe 'FZF ' . path
+endfunction
+
+command! REPOFZF call REPOFZF()
+nnoremap <leader>fr :REPOFZF<CR>
 
 " color
 set t_Co=256
 
-" set mouse=a
 
 
 " choosewin
@@ -457,8 +550,8 @@ let g:choosewin_overlay_enable = 1
 
 "nnoremap <S-Down>  :exe "resize " . (winheight(0) * 10/9) <CR>
 " nnoremap <S-Up>  :exe "resize " . (winheight(0) * 9/10) <CR>
- nnoremap <S-Down> :resize +2<CR>
- nnoremap <S-Up> :resize -2<CR>
+nnoremap <S-Down> :resize +2<CR>
+nnoremap <S-Up> :resize -2<CR>
 nnoremap <S-Left>  :vertical resize -2<CR>
 nnoremap <S-Right> :vertical resize +2<CR>
 
@@ -483,3 +576,42 @@ inoremap <silent><expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<C-g>
 
 nmap <silent> [g <Plug>(coc-diagnostic-prev)
 nmap <silent> ]g <Plug>(coc-diagnostic-next)
+
+" zoom windows
+nmap <C-w>z ::MaximizerToggle <CR>
+
+set clipboard=unnamed
+set clipboard=unnamedplus
+
+""vmap <C-c> "+yi
+""vmap <C-x> "+c
+""vmap <C-v> c<ESC>"+p
+"""imap <C-v> <C-r><C-o>+
+""
+""
+""vnoremap <C-c> "*y
+""
+""
+" vnoremap <C-c> y: call system("xclip -i", getreg("\""))<CR>
+"""noremap <C-V> :r !xclip -o <CR>
+" vnoremap <C-c> :'<,'>w !xclip -selection clipboard<Cr><Cr>
+
+function! RangeToClipboard() range
+  let [line1, col1] = getpos("'<")[1:2]
+  let [line2, col2] = getpos("'>")[1:2]
+  let lines = getline(line1, line2)
+  " handle incl/excl last char
+  let lines[-1] = lines[-1][: col2 - (&sel == 'inclusive' ? 1 : 2)]
+  let lines[0] = lines[0][col1 - 1:]
+  silent exec system('xclip -sel c', lines)
+endfunction
+
+function! CopyFullFile() range
+    execute ':w !xclip -sel c'
+endfunction
+
+vnoremap <C-c> :call RangeToClipboard() <CR>
+map <C-A> :call CopyFullFile() <CR>
+
+
+autocmd BufEnter * if expand("%:p:h") !~ '^/tmp' | silent! lcd %:p:h | endif
