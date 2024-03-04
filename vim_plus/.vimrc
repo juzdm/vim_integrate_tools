@@ -1,4 +1,3 @@
-
 call plug#begin()
 " The default plugin directory will be as follows:
 "   - Vim (Linux/macOS): '~/.vim/plugged'
@@ -65,8 +64,8 @@ Plug 'jiangmiao/auto-pairs'
 Plug 'weilbith/nerdtree_choosewin-plugin'
 Plug 'kevinoid/vim-jsonc'
 Plug 'szw/vim-maximizer'
-"p Plug 'fholgado/minibufexpl.vim'
-" Plug 'roblillack/vim-bufferlist'
+"Plug 'fholgado/minibufexpl.vim'
+"Plug 'roblillack/vim-bufferlist'
 
 call plug#end()
 " You can revert the settings after the call like so:
@@ -593,7 +592,7 @@ set clipboard=unnamedplus
 ""
 ""
 " vnoremap <C-c> y: call system("xclip -i", getreg("\""))<CR>
-"""noremap <C-V> :r !xclip -o <CR>
+" noremap <C-V> :r !xclip -o<CR>
 " vnoremap <C-c> :'<,'>w !xclip -selection clipboard<Cr><Cr>
 
 function! RangeToClipboard() range
@@ -612,6 +611,24 @@ endfunction
 
 vnoremap <C-c> :call RangeToClipboard() <CR>
 map <C-A> :call CopyFullFile() <CR>
+map <C-x> :call CopyFullFile() <CR> '<,'>d
+"map <C-S-v> <C-v>  
+
+function! PasteUseXclip() range
+    let txt = system('xclip -o -r -sel c ') 
+    execute "normal! a" . txt . "\<Esc>"
+endfunction
 
 
+"map <C-S-v> :r !xclip -o -r -sel c <CR>
+map <C-b> :call PasteUseXclip()<CR>
+":imap <C-b> :call PasteUseXclip()<CR>
+
+function! CopyCurrentWord() range
+    let word = expand("<cword>")
+    silent exec system('xclip -sel c', word)
+endfunction
+
+map <leader>cw :call CopyCurrentWord()<CR>
+"imap <leader>cw :call CopyCurrentWord()<CR>
 autocmd BufEnter * if expand("%:p:h") !~ '^/tmp' | silent! lcd %:p:h | endif
