@@ -9,7 +9,7 @@ call plug#begin()
 
 " Make sure you use single quotes
 
-"" Shorthand notation; fetches https://github.com/junegunn/vim-easy-align
+""getcurpos() Shorthand notation; fetches https://github.com/junegunn/vim-easy-align
 "Plug 'junegunn/vim-easy-align'
 "
 "" Any valid git URL is allowed
@@ -100,7 +100,7 @@ set report=0 " 通过使用: commands命令，告诉我们文件的哪一行被�
 set fillchars=vert:\ ,stl:\ ,stlnc:\ " 在被分割的窗口间显示空白，便于阅读
 set showmatch " 高亮显示匹配的括号
 set matchtime=1 " 匹配括号高亮的时间（单位是十分之一秒）
-set scrolloff=3 " 光标移动到buffer的顶部和底部时保持3行距离
+"set scrolloff=3 " 光标移动到buffer的顶部和底部时保持3行距离
 set smartindent " 为C程序提供自动缩进
 au BufRead,BufNewFile *  setfiletype txt " 高亮显示普通txt文件（需要txt.vim脚本）
 
@@ -114,10 +114,10 @@ set noeb                 " 关闭错误的提示
 syntax enable            " 开启语法高亮功能
 syntax on                " 自动语法高亮
 set t_Co=256             " 开启256色支持
-set cmdheight=2          " 设置命令行的高度
+"set cmdheight=          " 设置命令行的高度
 set showcmd              " select模式下显示选中的行数
 set ruler                " 总是显示光标位置
-set laststatus=2         " 总是显示状态栏
+"set laststatus=2         " 总是显示状态栏
 set number               " 开启行号显示
 set cursorline           " 高亮显示当前行
 set whichwrap+=<,>,h,l   " 设置光标键跨行
@@ -616,7 +616,13 @@ map <C-x> :call CopyFullFile() <CR> '<,'>d
 
 function! PasteUseXclip() range
     let txt = system('xclip -o -r -sel c ') 
-    execute "normal! a" . txt . "\<Esc>"
+    let current_cursor = getcurpos()[2]
+    " if it is  firset col, insert before  
+    if current_cursor == 1
+        execute "normal! i" . txt . "\<Esc>"
+    else 
+        execute "normal! a" . txt . "\<Esc>"
+    endif
 endfunction
 
 
@@ -631,4 +637,4 @@ endfunction
 
 map <leader>cw :call CopyCurrentWord()<CR>
 "imap <leader>cw :call CopyCurrentWord()<CR>
-autocmd BufEnter * if expand("%:p:h") !~ '^/tmp' | silent! lcd %:p:h | endif
+autocmd bufEnter * if expand("%:p:h") !~ '^/tmp' | silent! lcd %:p:h | endif
